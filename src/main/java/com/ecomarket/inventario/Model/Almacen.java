@@ -25,11 +25,13 @@ public class Almacen {
     @Column (nullable = false)
     private String direccion;
 
-    @Column (nullable = false)
+    @Column (nullable = true)
     private double precio;
 
-    @Column (nullable = false)
+    @Column (nullable = true)
     private int stock;
+
+
 
 
 }

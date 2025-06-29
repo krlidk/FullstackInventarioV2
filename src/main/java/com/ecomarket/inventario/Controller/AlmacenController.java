@@ -42,7 +42,7 @@ public class AlmacenController {
         return response;
     }
 
-    @PostMapping("agregarProducto/{idProducto}")
+    @PostMapping("/agregarProducto/{idProducto}")
     @Operation(summary = "Agregar Producto al Almacen", description = "Agrega un producto a un almacen específico")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Producto agregado exitosamente"),
@@ -50,12 +50,12 @@ public class AlmacenController {
         @ApiResponse(responseCode = "404", description = "Almacén o producto no encontrado"),
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
-    public ResponseEntity<ProductoDTO[]> agregarProducto(@RequestBody Map<String, Object> datos, @PathVariable int idProducto){
-       ResponseEntity<ProductoDTO[]> producto =  almacenService.agregarProducto(datos, idProducto);
+    public ResponseEntity<ProductoDTO> agregarProducto(@RequestBody Map<String, Object> datos, @PathVariable int idProducto){
+       ResponseEntity<ProductoDTO> producto =  almacenService.agregarProducto(datos, idProducto);
        return producto;
     }
 
-    @PutMapping("actualizarAlmacen")
+    @PutMapping("/actualizarAlmacen")
     @Operation(summary = "Actualizar Almacen", description = "Actualiza la información de un almacen")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Almacén actualizado con éxito"),

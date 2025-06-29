@@ -44,8 +44,12 @@ public interface AlmacenRepository extends JpaRepository<Almacen, AlmacenId> {
     void actualizarAlmacenPrecio(@Param("precio") double precio, @Param("id") int id);
 
     //Query para comprobar si un almacen existe
-    @Query("SELECT COUNT(a) > 0 FROM Almacen a WHERE a.almacenId.almacenId = :id")
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END FROM Almacen a WHERE a.almacenId.almacenId = :id")
     boolean encontraAlmacen(@Param("id") int id); 
 
+    //eliminar un almacen 
+    @Modifying
+    @Query("DELETE FROM Almacen a WHERE a.almacenId.almacenId = :id")
+    void eliminarAlmacen(@Param("id") int id);
     
 }

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 
 //URL SWAGGER http://localhost:8081/doc/swagger-ui/index.html#/
 
@@ -17,5 +18,10 @@ public class SwaggerConfig {
                         .title("API 2025 Ecomarket Inventario ")
                         .version("1.0")
                         .description("Documentacion API para Ecomarket de inventario de productos."));
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

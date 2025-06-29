@@ -23,19 +23,22 @@ public class AlmacenService {
     @Autowired
     private AlmacenRepository almacenRepository;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
     //metodo guardar producto
     @Transactional
-    public ResponseEntity<ProductoDTO[]> agregarProducto(Map<String, Object> datos, int productoId){
+    public ResponseEntity<ProductoDTO> agregarProducto(Map<String, Object> datos, int productoId){
         try {
             //capturamos los datos del producto agregado
-            ResponseEntity<ProductoDTO[]> producto = new RestTemplate().getForEntity(
+            ResponseEntity<ProductoDTO> producto = restTemplate.getForEntity(
                 "http://localhost:8080/api/v1/producto/buscarProductoId/{id}", 
-                ProductoDTO[].class,
+                ProductoDTO.class,
                 productoId); 
 
-            if(!datos.containsKey("id")){
+            if (!datos.containsKey("id")) {
                 System.err.println("No se ha encontrado el parametro id en el json");
-                return ResponseEntity.notFound().build();
+                return ResponseEntity.badRequest().body(producto.getBody());
             }
 
             int almacenId = (int) datos.get("id");
@@ -59,22 +62,24 @@ public class AlmacenService {
                     }
                     almacenRepository.save(almacen);
 
-                    return producto;
+                    return ResponseEntity.ok(producto.getBody());
                 }
 
                 //si almacen existe pero no el producto
-                if(!datos.containsKey("precio") && !datos.containsKey("stock")){
-                    System.err.println("No se han encontrado los parametros stock y precio");
-                    return ResponseEntity.badRequest().build();
+                if (!datos.containsKey("precio") || !datos.containsKey("stock")) {
+                    System.err.println("Faltan parametros obligatorios: stock y precio");
+                    return ResponseEntity.badRequest().body(producto.getBody());
                 }
+
                 Almacen almacenBase = almacenRepository.findOnebyId(almacenId).stream().findFirst().orElse(null);
-                if(almacenBase == null){
-                    return ResponseEntity.notFound().build();
+                if (almacenBase == null) {
+                    System.err.println("No se encontró un almacén con el ID proporcionado");
+                    return ResponseEntity.badRequest().body(producto.getBody());
                 }
 
                 String nombre = almacenBase.getAlmacenNombre();
                 String direccion = almacenBase.getDireccion();
-                int stock =(int) datos.get("stock");
+                int stock = (int) datos.get("stock");
                 double precio = (double) datos.get("precio");
 
 
@@ -82,7 +87,7 @@ public class AlmacenService {
 
                 almacenRepository.save(almacenNuevoProducto);
                 
-                return producto;
+                return ResponseEntity.ok(producto.getBody());
             }
 
             //caso donde el almacen no existe
@@ -91,7 +96,7 @@ public class AlmacenService {
             for(String clave : clavesRequeridas){
                 if(!datos.containsKey(clave)){
                     System.err.println("Falta alguna de las claves necesarias: nombre, direccion, precio, stock");
-                    return ResponseEntity.badRequest().build();
+                    return ResponseEntity.badRequest().body(producto.getBody());
                 }
             }
             
@@ -106,52 +111,55 @@ public class AlmacenService {
 
             almacenRepository.save(nuevoAlmacen);
 
-            return producto;
+            return ResponseEntity.ok(producto.getBody());
 
 
         } catch (Exception e) {
             System.out.println("Error al recibir el JSON " + e.getMessage());
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.badRequest().build();
         }
     }
 
     @Transactional
-    public ResponseEntity<?> actualizarAlmacen(Map <String, Object> datos){
-        
-        if(!datos.containsKey("id")){
+    public ResponseEntity<String> actualizarAlmacen(Map<String, Object> datos) {
+        if (!datos.containsKey("id")) {
             return ResponseEntity.notFound().build();
         }
-        
+
         int almacenId = (int) datos.get("id");
 
-        if(!almacenRepository.encontraAlmacen(almacenId)){
+        Optional<Almacen> almacenOpt = almacenRepository.findOnebyId(almacenId).stream().findFirst();
+        if (almacenOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
-        }        
-        if(!datos.containsKey("nombre") && datos.containsKey("direccion")){
-            return ResponseEntity.noContent().build();
         }
 
-        if(datos.containsKey("nombre") ){
-            String nombre = (String) datos.get("nombre");
-            
-            almacenRepository.actualizarAlmacenNombre(nombre, almacenId);
+        Almacen almacen = almacenOpt.get();
+
+        if (datos.containsKey("nombre")) {
+            almacen.setAlmacenNombre((String) datos.get("nombre"));
         }
-        if(datos.containsKey("direccion")){
-            String direccion = (String) datos.get("direccion");
-            
-            almacenRepository.actualizarAlmacenDireccion(direccion, almacenId);
+        if (datos.containsKey("direccion")) {
+            almacen.setDireccion((String) datos.get("direccion"));
+        }
+        if (datos.containsKey("precio")) {
+            almacen.setPrecio((double) datos.get("precio"));
+        }
+        if (datos.containsKey("stock")) {
+            almacen.setStock((int) datos.get("stock"));
         }
 
-        return ResponseEntity.ok().body("Almacen Actualizado Con exito");
+        almacenRepository.save(almacen);
+
+        return ResponseEntity.ok("Almacen actualizado con éxito");
     }
 
-    public ResponseEntity<?>  buscarAlmacenPorId(int id){
+    public ResponseEntity<AlmacenDTO> buscarAlmacenPorId(int id){
         Almacen almacenBase = almacenRepository.findOnebyId(id).stream().findFirst().orElse(null);
-        if(almacenBase == null){
+        if (almacenBase == null) {
             return ResponseEntity.notFound().build();
         }
 
-        AlmacenDTO almacenVista = new AlmacenDTO(id,almacenBase.getAlmacenNombre(),almacenBase.getDireccion());
+        AlmacenDTO almacenVista = new AlmacenDTO(id, almacenBase.getAlmacenNombre(), almacenBase.getDireccion());
 
         return ResponseEntity.ok().body(almacenVista); 
     }
@@ -179,13 +187,13 @@ public class AlmacenService {
         return ResponseEntity.badRequest().body("Error obteniendo los productos");
     }
 
-    public ResponseEntity<?> obtenerAlmacenes() {
+    public ResponseEntity<List<AlmacenDTO>> obtenerAlmacenes() {
         List<AlmacenDTO> almacenes = almacenRepository.findAll().stream().map(almacen -> new AlmacenDTO(
             almacen.getAlmacenId().getAlmacenId(),
             almacen.getAlmacenNombre(),
             almacen.getDireccion())).distinct().toList();
-            
-        if(almacenes.isEmpty()){
+
+        if (almacenes.isEmpty()) {
             return ResponseEntity.noContent().build();
         }
 
@@ -193,10 +201,14 @@ public class AlmacenService {
     }
     
 
-    public ResponseEntity<?> buscarPorNombre(@RequestParam String almacenNombre) {
-        List<AlmacenDTO> almacenes = almacenRepository.findByAlmacenNombre(almacenNombre).stream().map(almacen -> new AlmacenDTO(almacen.getAlmacenId().getAlmacenId(), almacen.getAlmacenNombre(),almacen.getDireccion())).distinct().toList();
-        if(almacenes.isEmpty()){
-            return ResponseEntity.badRequest().body("No se han encontrado almacenes con ese nombre");
+    public ResponseEntity<List<AlmacenDTO>> buscarPorNombre(@RequestParam String almacenNombre) {
+        List<AlmacenDTO> almacenes = almacenRepository.findByAlmacenNombre(almacenNombre).stream().map(almacen -> new AlmacenDTO(
+            almacen.getAlmacenId().getAlmacenId(),
+            almacen.getAlmacenNombre(),
+            almacen.getDireccion())).distinct().toList();
+
+        if (almacenes.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
         }
 
         return ResponseEntity.ok(almacenes);
@@ -211,5 +223,15 @@ public class AlmacenService {
         return ResponseEntity.ok(almacenes);
     }
 
+    //Eliminar un almacen
+    @Transactional
+    public ResponseEntity<?> eliminarAlmacen(int id) {
+        if (!almacenRepository.encontraAlmacen(id)) {
+            return ResponseEntity.notFound().build();} 
+        else {
+            almacenRepository.eliminarAlmacen(id);
+            return ResponseEntity.ok("Almacen eliminado con éxito");
+        }    
+    }
     
 }

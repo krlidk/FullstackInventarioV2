@@ -63,7 +63,7 @@ public class DataLoader implements CommandLineRunner{
                     for(int j = 0; j < 2; j ++ ){
                         int productoId = productoIds.get(random.nextInt(productoIds.size()));
 
-                        double precio = random.nextDouble(100);
+                        double precio = Math.round((random.nextDouble() * (15000 - 1000) + 1000) * 10) / 10.0;
                         int stock = random.nextInt(100);
 
                         AlmacenId id = new AlmacenId(productoId ,almacenId);
