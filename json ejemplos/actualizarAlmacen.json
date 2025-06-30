@@ -1,0 +1,7 @@
+{
+  "id": 20,
+  "nombre": "Almacen Central",
+  "direccion": "Calle Principal 123",
+  "precio": 150.75,
+  "stock": 50
+}

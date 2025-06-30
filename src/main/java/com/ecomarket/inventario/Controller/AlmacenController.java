@@ -3,8 +3,10 @@ package com.ecomarket.inventario.Controller;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,8 +53,8 @@ public class AlmacenController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     public ResponseEntity<ProductoDTO> agregarProducto(@RequestBody Map<String, Object> datos, @PathVariable int idProducto){
-       ResponseEntity<ProductoDTO> producto =  almacenService.agregarProducto(datos, idProducto);
-       return producto;
+        ResponseEntity<ProductoDTO> producto =  almacenService.agregarProducto(datos, idProducto);
+        return producto;
     }
 
     @PutMapping("/actualizarAlmacen")
@@ -113,5 +115,20 @@ public class AlmacenController {
     })
     public ResponseEntity<?> buscarAlmacenPorDireccion(@RequestParam String direccion){
         return almacenService.buscarPorDireccion(direccion);
+    }
+
+    @DeleteMapping("/eliminarAlmacen/{id}")
+    @Operation(summary = "Eliminar Almacen", description = "Elimina un almacen por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Almacén eliminado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Almacén no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<String> eliminarAlmacen(@PathVariable int id) {
+        ResponseEntity<?> response = almacenService.eliminarAlmacen(id);
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return ResponseEntity.ok("Almacen eliminado con éxito");
+        }
+        return ResponseEntity.status(404).body("Almacen no encontrado");
     }
 }

@@ -233,5 +233,14 @@ public class AlmacenService {
             return ResponseEntity.ok("Almacen eliminado con éxito");
         }    
     }
+
+    public List<AlmacenDTO> getAllAlmacenes() {
+        List<AlmacenDTO> almacenes = almacenRepository.findAll().stream().map(almacen -> new AlmacenDTO(
+            almacen.getAlmacenId().getAlmacenId(),
+            almacen.getAlmacenNombre(),
+            almacen.getDireccion())).distinct().toList();
+
+        return almacenes;
+    }
     
 }
