@@ -12,8 +12,4 @@ public class ProductoDTO {
     private int productoId;
     private String nombre;
     private CategoriaDTO categoria;
-    public AlmacenDTO getAlmacenDTO() {
-        throw new UnsupportedOperationException("Unimplemented method 'getAlmacenDTO'");
-    }
-
 }

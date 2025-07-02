@@ -38,7 +38,7 @@ public class DataLoader implements CommandLineRunner{
         try {
             //recibiendo lo productos disponibles del otro microservicio
             ResponseEntity<List<Integer>> ids = new RestTemplate().exchange(
-            "http://localhost:8080/api/v1/producto/productoDisponible" ,
+            "http://catalogo-app:8080/api/v1/producto/productoDisponible" ,
                 HttpMethod.GET,
             null,
             new ParameterizedTypeReference<List<Integer>>() {} 

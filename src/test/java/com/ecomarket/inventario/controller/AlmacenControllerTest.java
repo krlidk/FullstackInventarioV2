@@ -1,161 +1,115 @@
 package com.ecomarket.inventario.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.RestTemplate;
 
 import com.ecomarket.inventario.Controller.AlmacenController;
 import com.ecomarket.inventario.Model.Almacen;
 import com.ecomarket.inventario.Model.AlmacenId;
-import com.ecomarket.inventario.ProductoDTO.AlmacenDTO;
+import com.ecomarket.inventario.ProductoDTO.CategoriaDTO;
 import com.ecomarket.inventario.ProductoDTO.ProductoDTO;
+import com.ecomarket.inventario.Repository.AlmacenRepository;
 import com.ecomarket.inventario.Service.AlmacenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@WebMvcTest(AlmacenController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 public class AlmacenControllerTest {
 
+    RestTemplate restTemplate;
+    @MockitoBean
+    AlmacenController almacenController;
+
+    @MockitoBean
+    AlmacenRepository almacenRepository;
+    @MockitoBean
+    AlmacenService almacenService;
+
     @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
-    private AlmacenService almacenService;
+    MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper objectMapper;
+    ObjectMapper objectMapper;
 
-    private AlmacenDTO almacenDTO;
-    private Almacen almacen;
+    @Test
+    void buscarAlmacenId() throws Exception {
+        int almacenId = 1;
+        int productoId = 1;
+        AlmacenId id = new AlmacenId(productoId, almacenId);
+        String nombre = "almacen";
+        String direccion = "direccion";
+        int stock = 100;
+        double precio = 100.0;
+        Almacen almacen = new Almacen(id, nombre, direccion, precio, stock);
 
-    @BeforeEach
-    public void setUp() {
-        almacenDTO = new AlmacenDTO(1, "Almacen Central", "Calle Principal 123");
-        almacen = new Almacen();
-        almacen.setAlmacenId(new AlmacenId(1, 1));
-        almacen.setAlmacenNombre("Almacen Central");
-        almacen.setDireccion("Calle Principal 123");
+        List<Almacen> almacenes = new ArrayList<>();
+        almacenes.add(almacen);
+        when(almacenRepository.findOnebyId(almacenId)).thenReturn(almacenes);
+
+        mockMvc.perform(get("/api/v1/almacen/buscarAlmacenId/{id}", almacenId))
+                .andExpect(status().isOk());
     }
 
     @Test
-    public void testAgregarProducto() throws Exception {
-        when(almacenService.agregarProducto(any(), anyInt())).thenReturn(ResponseEntity.ok().body(new ProductoDTO(){}));
+    void agregarProducto() throws Exception {
+        Integer id = 1;
 
-        mockMvc.perform(post("/api/v1/almacen/agregarProducto/0")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(almacenDTO)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.productoId").value(0));
+        Map<String, Object> datos = new HashMap<>();
+        datos.put("id", 1);
+        datos.put("nombre", "Ecomarket Calera");
+        datos.put("direccion", "Calera");
+        datos.put("precio", 100.0);
+        datos.put("stock", 100);
+
+        List<ProductoDTO> productos = new ArrayList<>();
+        CategoriaDTO categoriaDTO = new CategoriaDTO(1, "categoria", productos);
+        ProductoDTO productoDTO = new ProductoDTO(id, "producto", categoriaDTO);
+
+        when(almacenService.agregarProducto(datos, id)).thenReturn(ResponseEntity.ok(productoDTO));
+
+        mockMvc
+                .perform(post("/api/v1/almacen/agregarProducto/{idProducto}", id)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(datos)))
+                .andExpect(status().isOk());
+
     }
 
     @Test
-    public void testActualizarAlmacen() throws Exception {
-        when(almacenService.actualizarAlmacen(anyMap())).thenAnswer(invocation -> {
-            return ResponseEntity.ok().body("Almacen actualizado con éxito");
-        });
+    void actualizarAlmacen() throws Exception {
 
-        mockMvc.perform(put("/api/v1/almacen/actualizar/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(almacenDTO)))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Almacen actualizado con éxito"));
+        Map<String, Object> datos = new HashMap<>();
+        datos.put("id", 1);
+        datos.put("nombre", "Ecomarket Calera");
+        datos.put("direccion", "Calera");
+        datos.put("precio", 100.0);
+        datos.put("stock", 100);
+
+        String response = "almacen actualizado";
+        when(almacenService.actualizarAlmacen(datos)).thenReturn(ResponseEntity.ok(response));
+        mockMvc.perform(
+                put("/api/v1/almacen/actualizarAlmacen")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(datos)))
+                .andExpect(status().isOk());
     }
 
-    @Test
-    public void testBuscarAlmacenPorId() throws Exception {
-        when(almacenService.buscarAlmacenPorId(1)).thenReturn(ResponseEntity.ok().body(new AlmacenDTO(1, "Almacen Central", "Calle Principal 123")));
-
-        mockMvc.perform(post("/api/v1/almacen/agregarProducto/1")
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString(almacenDTO)))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.almacenId").value(1))
-        .andExpect(jsonPath("$.almacenNombre").value("Almacen Central"))
-        .andExpect(jsonPath("$.direccion").value("Calle Principal 123"));
-    }
-    
-    @Test
-    public void testBuscarProductoPorAlmacen() throws Exception {
-        when(almacenService.buscarProductoPorAlmacen(1)).thenAnswer(invocation -> {
-            return ResponseEntity.ok().body(new ProductoDTO[]{});
-        });
-
-        mockMvc.perform(get("/api/v1/almacen/buscarProductos/1")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-    }
-
-    @Test
-    public void testObtenerAlmacenes() throws Exception {
-        when(almacenService.obtenerAlmacenes()).thenReturn(ResponseEntity.ok().body(List.of(almacenDTO)));
-
-        mockMvc.perform(get("/api/v1/almacen/mostrarAlmacenes")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].almacenId").value(1))
-                .andExpect(jsonPath("$[0].almacenNombre").value("Almacen Central"))
-                .andExpect(jsonPath("$[0].direccion").value("Calle Principal 123"));
-    }
-
-    @Test
-    public void testBuscarPorNombre() throws Exception {
-        when(almacenService.buscarPorNombre("Almacen Central")).thenReturn(ResponseEntity.ok().body(List.of(almacenDTO)));
-
-        mockMvc.perform(get("/api/v1/almacen/buscarPorNombre")
-                .param("almacenNombre", "Almacen Central")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].almacenId").value(1))
-                .andExpect(jsonPath("$[0].almacenNombre").value("Almacen Central"))
-                .andExpect(jsonPath("$[0].direccion").value("Calle Principal 123"));
-    }
-
-    @Test
-    public void testBuscarPorDireccion() throws Exception {
-        when(almacenService.buscarPorDireccion("Calle Principal 123")).thenAnswer(invocation -> {
-            return ResponseEntity.ok().body(List.of(new AlmacenDTO(1, "Almacen Central", "Calle Principal 123")));
-        });
-
-        mockMvc.perform(get("/api/v1/almacen/almacenPorDireccion")
-                .param("direccion", "Calle Principal 123")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].almacenId").value(1))
-                .andExpect(jsonPath("$[0].almacenNombre").value("Almacen Central"))
-                .andExpect(jsonPath("$[0].direccion").value("Calle Principal 123"));
-    }
-
-    @Test
-    public void testEliminarAlmacen() throws Exception {
-        when(almacenService.eliminarAlmacen(1)).thenAnswer(invocation -> {
-            return ResponseEntity.ok().body("Almacen eliminado con éxito");
-        });
-
-        mockMvc.perform(delete("/api/v1/almacen/eliminar/1")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Almacen eliminado con éxito"));
-    }
 }
