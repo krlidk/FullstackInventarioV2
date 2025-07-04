@@ -30,6 +30,7 @@ fi
 echo -e "${GREEN} BASE DE DATOS LEVANTADA"
 echo ""
 
+<<<<<<< HEAD
 echo -e "${YELLOW} esperando que MySQL este conectado..."
 
 MAX_RETRIES=20
@@ -47,6 +48,12 @@ done
 echo -e "${YELLOW} LEVANTANDO INVENTARIO APP"
 echo ""
 sleep 10 
+=======
+sleep 10
+
+echo -e "${YELLOW} LEVANTANDO CATALOGO APP"
+echo ""
+>>>>>>> 2d6ca5732186f84fe8d5b5d472030b45d6631ca3
 
 sudo docker-compose -f "docker-compose.yml" up --build -d "inventario-app"
 
@@ -55,6 +62,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+<<<<<<< HEAD
 echo -e "${GREEN} INVENTARIO APP LEVANTADO"
+=======
+echo -e "${GREEN} CATALOGO APP LEVANTADO"
+>>>>>>> 2d6ca5732186f84fe8d5b5d472030b45d6631ca3
 sudo docker-compose ps
 

@@ -41,4 +41,8 @@ services:
 networks:
   externa:
     external: true 
+<<<<<<< HEAD
     name: microservicioRed
+=======
+    name: microservicioRed
+>>>>>>> 2d6ca5732186f84fe8d5b5d472030b45d6631ca3
