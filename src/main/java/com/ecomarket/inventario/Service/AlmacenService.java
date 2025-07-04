@@ -26,15 +26,15 @@ public class AlmacenService {
     @Autowired
     private RestTemplate restTemplate;
 
-    //metodo guardar producto
+    // metodo guardar producto
     @Transactional
-    public ResponseEntity<ProductoDTO> agregarProducto(Map<String, Object> datos, int productoId){
+    public ResponseEntity<ProductoDTO> agregarProducto(Map<String, Object> datos, int productoId) {
         try {
-            //capturamos los datos del producto agregado
+            // capturamos los datos del producto agregado
             ResponseEntity<ProductoDTO> producto = restTemplate.getForEntity(
-                "http://localhost:8080/api/v1/producto/buscarProductoId/{id}", 
-                ProductoDTO.class,
-                productoId); 
+                    "http://catalogo-app:8080/api/v1/producto/buscarProductoId/{id}",
+                    ProductoDTO.class,
+                    productoId);
 
             if (!datos.containsKey("id")) {
                 System.err.println("No se ha encontrado el parametro id en el json");
@@ -43,21 +43,21 @@ public class AlmacenService {
 
             int almacenId = (int) datos.get("id");
 
-            //caso en donde el almacen ya existe
-            if(almacenRepository.encontraAlmacen(almacenId)){
-                AlmacenId id = new AlmacenId(productoId,almacenId);
+            // caso en donde el almacen ya existe
+            if (almacenRepository.encontraAlmacen(almacenId)) {
+                AlmacenId id = new AlmacenId(productoId, almacenId);
 
                 Optional<Almacen> almacenOpt = almacenRepository.findById(id);
 
-                //si el producto ya existe
-                if(almacenOpt.isPresent()){
+                // si el producto ya existe
+                if (almacenOpt.isPresent()) {
                     Almacen almacen = almacenOpt.get();
 
-                    if(datos.containsKey("precio")){
+                    if (datos.containsKey("precio")) {
                         almacen.setPrecio((double) datos.get("precio"));
                     }
 
-                    if(datos.containsKey("stock")){
+                    if (datos.containsKey("stock")) {
                         almacen.setStock((int) datos.get("stock"));
                     }
                     almacenRepository.save(almacen);
@@ -65,7 +65,7 @@ public class AlmacenService {
                     return ResponseEntity.ok(producto.getBody());
                 }
 
-                //si almacen existe pero no el producto
+                // si almacen existe pero no el producto
                 if (!datos.containsKey("precio") || !datos.containsKey("stock")) {
                     System.err.println("Faltan parametros obligatorios: stock y precio");
                     return ResponseEntity.badRequest().body(producto.getBody());
@@ -82,37 +82,34 @@ public class AlmacenService {
                 int stock = (int) datos.get("stock");
                 double precio = (double) datos.get("precio");
 
-
-                Almacen almacenNuevoProducto = new Almacen(id,nombre,direccion,precio,stock);
+                Almacen almacenNuevoProducto = new Almacen(id, nombre, direccion, precio, stock);
 
                 almacenRepository.save(almacenNuevoProducto);
-                
+
                 return ResponseEntity.ok(producto.getBody());
             }
 
-            //caso donde el almacen no existe
-            String clavesRequeridas[]= {"nombre","direccion","precio","stock"};
-            
-            for(String clave : clavesRequeridas){
-                if(!datos.containsKey(clave)){
+            // caso donde el almacen no existe
+            String clavesRequeridas[] = { "nombre", "direccion", "precio", "stock" };
+
+            for (String clave : clavesRequeridas) {
+                if (!datos.containsKey(clave)) {
                     System.err.println("Falta alguna de las claves necesarias: nombre, direccion, precio, stock");
                     return ResponseEntity.badRequest().body(producto.getBody());
                 }
             }
-            
+
             AlmacenId id = new AlmacenId(productoId, almacenId);
             String nombre = (String) datos.get("nombre");
             String direccion = (String) datos.get("direccion");
             double precio = (double) datos.get("precio");
             int stock = (int) datos.get("stock");
 
-            
-            Almacen nuevoAlmacen = new Almacen(id,nombre,direccion,precio,stock);
+            Almacen nuevoAlmacen = new Almacen(id, nombre, direccion, precio, stock);
 
             almacenRepository.save(nuevoAlmacen);
 
             return ResponseEntity.ok(producto.getBody());
-
 
         } catch (Exception e) {
             System.out.println("Error al recibir el JSON " + e.getMessage());
@@ -164,17 +161,17 @@ public class AlmacenService {
         return ResponseEntity.ok().body(almacenVista); 
     }
 
-    public ResponseEntity<?> buscarProductoPorAlmacen(int id){
+    public ResponseEntity<ProductoDTO[]>buscarProductoPorAlmacen(int id){
         try {
         
             List<Integer> ids = almacenRepository.findOnebyId(id).stream().map(almacen -> almacen.getAlmacenId().getProductoId()).toList();
             
             if(ids.isEmpty()){
-                return ResponseEntity.badRequest().body("La lista de id esta vacia");
+                return ResponseEntity.notFound().build();
             }
 
             ResponseEntity<ProductoDTO[]> productos = new RestTemplate().postForEntity(
-                "http://localhost:8080/api/v1/producto/buscarProductos",
+                "http://catalogo-app:8080/api/v1/producto/buscarProductos",
                 ids,
                 ProductoDTO[].class);
             
@@ -184,7 +181,7 @@ public class AlmacenService {
             System.err.println("Error " + e.getMessage());
         }
         
-        return ResponseEntity.badRequest().body("Error obteniendo los productos");
+        return ResponseEntity.notFound().build();
     }
 
     public ResponseEntity<List<AlmacenDTO>> obtenerAlmacenes() {

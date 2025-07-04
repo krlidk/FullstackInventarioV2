@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+
+  # Contenedor con base de datos
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db-inventario
+
+    environment:
+      MYSQL_DATABASE: almacen_db_test
+      MYSQL_USER: almacen_user_test 
+      MYSQL_ROOT_PASSWORD: DuocUc..2025
+      MYSQL_PASSWORD: DuocUc..2025
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u almacen_user_test -pDuocUc..2025"]
+      interval: 10s
+      timeout: 10S 
+      retries: 5
+    ports:
+      - "3307:3306"
+    networks:
+      - externa 
+
+  inventario-app:
+    build: .
+    container_name: inventario-app
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/almacen_db_test?useSSL=true&serverTimezone=UTC&hibernate.jdbc.batch_versioned_data=true
+      SPRING_DATASOURCE_USERNAME: almacen_user_test 
+      SPRING_DATASOURCE_PASSWORD: DuocUc..2025
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQL8Dialect
+    networks:
+      - externa 
+
+networks:
+  externa:
+    external: true 
+    name: microservicioRed
